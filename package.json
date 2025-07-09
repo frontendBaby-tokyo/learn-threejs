@@ -1,0 +1,26 @@
+{
+  "name": "webgl",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "bun run docs && vite build",
+    "preview": "vite preview",
+    "docs": "bun run scripts/generate-docs.js",
+    "docs:dev": "bun run docs && bun run dev"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "vite": "^7.0.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/three": "^0.178.0",
+    "highlight.js": "^11.11.1",
+    "marked": "^16.0.0",
+    "three": "^0.178.0"
+  }
+}

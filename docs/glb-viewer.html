@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLB Viewer - 3Dモデルビューア - Three.js Examples</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-container">
+                <a href="../index.html" class="nav-home">🏠 ホーム</a>
+                <h1>GLB Viewer - 3Dモデルビューア</h1>
+                <div class="nav-links">
+                    <a href="./basic-scene.html">Basic Scene</a>
+                    <a href="./glb-viewer.html">GLB Viewer</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="content">
+            <h1>Three.js GLBビューア解説ドキュメント</h1>
+<p>このドキュメントでは、<code>main.ts</code>の3Dモデル読み込みとアニメーション機能について、Three.js初心者向けに詳しく解説します。</p>
+<h2>🌟 Three.jsとは？</h2>
+<p><strong>Three.js</strong>は、Webブラウザで3Dグラフィックスを簡単に作成できるJavaScriptライブラリです。</p>
+<h3>3Dグラフィックスの基本要素</h3>
+<p>3D表示には以下の3つの要素が必要です：</p>
+<ol>
+<li><strong>シーン（Scene）</strong>: 3Dオブジェクトを配置する「舞台」</li>
+<li><strong>カメラ（Camera）</strong>: その舞台を「どこから見るか」を決める視点  </li>
+<li><strong>レンダラー（Renderer）</strong>: 3Dの世界を2Dの画面に「描画する」エンジン</li>
+</ol>
+<p>これは映画撮影と同じ構造です。舞台にセットや俳優を配置し、カメラで撮影し、フィルムに記録するのと同じです。</p>
+<h3>WebGLとThree.jsの関係</h3>
+<ul>
+<li><strong>WebGL</strong>: ブラウザで3D描画を行う低レベルなAPI（とても複雑）</li>
+<li><strong>Three.js</strong>: WebGLを使いやすくしてくれるライブラリ</li>
+</ul>
+<p>WebGLで立方体を一つ表示するだけでも数百行必要ですが、Three.jsなら数行で済みます。</p>
+<h2>main.ts</h2>
+<pre><code class="language-typescript">import * as THREE from &#39;three&#39;;
+import { GLTFLoader } from &#39;three/examples/jsm/loaders/GLTFLoader.js&#39;;
+import { OrbitControls } from &#39;three/examples/jsm/controls/OrbitControls.js&#39;;
+
+// 🎬 基本セットアップ
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+// 🎨 レンダラー設定
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setClearColor(0x222222);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+// 📺 DOM連携
+const container = document.getElementById(&#39;container&#39;);
+if (container) {
+    container.appendChild(renderer.domElement);
+}
+
+// 📷 カメラとコントロール
+camera.position.set(0, 1, 3);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+
+// 💡 ライティングシステム
+const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+scene.add(ambientLight);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(1, 1, 1);
+scene.add(directionalLight);
+
+// 📁 3Dモデル読み込み
+const loader = new GLTFLoader();
+let mixer: THREE.AnimationMixer | null = null;
+
+loader.load(
+    &#39;/models/885_sofa_1seat.glb&#39;,
+    (gltf) =&gt; {
+        // 成功時の処理
+        const model = gltf.scene;
+        scene.add(model);
+        
+        // 自動サイズ調整
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3()).length();
+        const center = box.getCenter(new THREE.Vector3());
+        
+        model.position.sub(center);
+        camera.position.set(size / 2, size / 5, size / 2);
+        camera.lookAt(0, 0, 0);
+        
+        // アニメーション設定
+        if (gltf.animations &amp;&amp; gltf.animations.length &gt; 0) {
+            mixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach((clip) =&gt; {
+                mixer!.clipAction(clip).play();
+            });
+        }
+    },
+    (progress) =&gt; {
+        // 進行状況
+        const percentage = (progress.loaded / progress.total) * 100;
+        console.log(`読み込み進行状況: ${percentage.toFixed(2)}%`);
+    },
+    (error) =&gt; {
+        // エラー処理
+        console.error(&#39;GLBファイルの読み込みエラー:&#39;, error);
+    }
+);
+
+// 📱 レスポンシブ対応
+window.addEventListener(&#39;resize&#39;, () =&gt; {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// 🎞️ アニメーションループ
+function animate() {
+    requestAnimationFrame(animate);
+    
+    if (mixer) {
+        mixer.update(0.016);
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+animate();
+</code></pre>
+<h2>🎬 基本セットアップの詳細解説</h2>
+<h3>1. ライブラリのインポート</h3>
+<pre><code class="language-typescript">import * as THREE from &#39;three&#39;;
+import { GLTFLoader } from &#39;three/examples/jsm/loaders/GLTFLoader.js&#39;;
+import { OrbitControls } from &#39;three/examples/jsm/controls/OrbitControls.js&#39;;
+</code></pre>
+<p><strong>各ライブラリの役割</strong></p>
+<ul>
+<li><code>THREE</code>: Three.jsのメインライブラリ（シーン、カメラ、レンダラーなど）</li>
+<li><code>GLTFLoader</code>: 3Dモデルファイル（GLB/GLTF形式）を読み込むためのツール</li>
+<li><code>OrbitControls</code>: マウスでカメラを操作するためのツール</li>
+</ul>
+<h3>2. 基本的な3要素の作成</h3>
+<pre><code class="language-typescript">const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+</code></pre>
+<p><strong>Scene（シーン）</strong></p>
+<ul>
+<li>3Dオブジェクトを配置する空間</li>
+<li>映画のセットのようなもの</li>
+<li>ここに追加されたオブジェクトのみが画面に表示されます</li>
+</ul>
+<p><strong>PerspectiveCamera（透視投影カメラ）</strong></p>
+<ul>
+<li>人間の目と同じような見え方をするカメラ</li>
+<li>遠くのものは小さく、近くのものは大きく見えます</li>
+<li>引数の意味：<ul>
+<li><code>75</code>: 視野角（広角レンズか望遠レンズかを決める）</li>
+<li><code>window.innerWidth / window.innerHeight</code>: 画面の縦横比</li>
+<li><code>0.1</code>: 近クリップ面（これより近いものは見えない）</li>
+<li><code>1000</code>: 遠クリップ面（これより遠いものは見えない）</li>
+</ul>
+</li>
+</ul>
+<p><strong>WebGLRenderer（レンダラー）</strong></p>
+<ul>
+<li>3D空間を2D画面に描画するエンジン</li>
+<li><code>antialias: true</code>: 画像の縁をなめらかにする（ジャギー除去）</li>
+</ul>
+<h2>🎨 レンダラー設定の詳細解説</h2>
+<h3>1. 画面サイズの設定</h3>
+<pre><code class="language-typescript">renderer.setSize(window.innerWidth, window.innerHeight);
+</code></pre>
+<p><strong>なぜ画面サイズを設定するのか？</strong></p>
+<ul>
+<li>レンダラーが何ピクセルで描画するかを指定</li>
+<li>ブラウザのウィンドウサイズに合わせることで、全画面表示になります</li>
+<li>この設定なしでは、小さな描画領域しか得られません</li>
+</ul>
+<h3>2. 背景色の設定</h3>
+<pre><code class="language-typescript">renderer.setClearColor(0x222222);
+</code></pre>
+<p><strong>背景色の重要性</strong></p>
+<ul>
+<li><code>0x222222</code>: 16進数カラーコード（CSS の #222222 と同じ）</li>
+<li>暗めのグレー色で、3Dモデルのシルエットが見やすくなります</li>
+<li>明るすぎる背景は目が疲れやすく、暗すぎると詳細が見えにくくなります</li>
+</ul>
+<h3>3. 色空間の設定</h3>
+<pre><code class="language-typescript">renderer.outputColorSpace = THREE.SRGBColorSpace;
+</code></pre>
+<p><strong>色空間とは？</strong></p>
+<ul>
+<li>色の表現方法の規格</li>
+<li>sRGB: 現代のモニターで標準的に使われる色空間</li>
+<li>この設定により、デザイナーが意図した色合いが正確に表示されます</li>
+</ul>
+<h2>📺 DOM連携の仕組み</h2>
+<h3>1. HTML要素への追加</h3>
+<pre><code class="language-typescript">const container = document.getElementById(&#39;container&#39;);
+if (container) {
+    container.appendChild(renderer.domElement);
+}
+</code></pre>
+<p><strong>renderer.domElementとは？</strong></p>
+<ul>
+<li>レンダラーが内部で作成するcanvas要素</li>
+<li>Three.jsはこのcanvas上に3D映像を描画します</li>
+<li>HTML上の指定した場所に配置することで、Webページに3D表示が可能になります</li>
+</ul>
+<p><strong>なぜif文でチェックするのか？</strong></p>
+<ul>
+<li>HTML側で&#39;container&#39;というIDの要素が存在しない場合のエラーを防ぐため</li>
+<li>安全なコーディングの基本です</li>
+</ul>
+<h2>📷 カメラとコントロールの詳細解説</h2>
+<h3>1. カメラの初期位置</h3>
+<pre><code class="language-typescript">camera.position.set(0, 1, 3);
+</code></pre>
+<p><strong>3D座標系の理解</strong></p>
+<ul>
+<li><strong>X軸</strong>: 左右（右がプラス）</li>
+<li><strong>Y軸</strong>: 上下（上がプラス）  </li>
+<li><strong>Z軸</strong>: 奥行き（手前がプラス）</li>
+<li><code>(0, 1, 3)</code>: 中央、やや上、手前から見る位置</li>
+</ul>
+<h3>2. マウス操作の設定</h3>
+<pre><code class="language-typescript">const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+</code></pre>
+<p><strong>OrbitControlsとは？</strong></p>
+<ul>
+<li>マウスで3Dオブジェクトを自由に回転・拡大・移動できるツール</li>
+<li>左クリック + ドラッグ: 回転</li>
+<li>右クリック + ドラッグ: 移動</li>
+<li>マウスホイール: 拡大・縮小</li>
+</ul>
+<p><strong>Damping（減衰）の効果</strong></p>
+<ul>
+<li>マウス操作に慣性を加える機能</li>
+<li>急な動きを滑らかにし、より自然な操作感を実現</li>
+<li><code>dampingFactor: 0.05</code>: 適度な滑らかさの設定</li>
+</ul>
+<h2>💡 ライティングシステムの基礎</h2>
+<h3>1. 環境光（AmbientLight）</h3>
+<pre><code class="language-typescript">const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+scene.add(ambientLight);
+</code></pre>
+<p><strong>環境光とは？</strong></p>
+<ul>
+<li>全体を均等に照らす基本的な明るさ</li>
+<li>影のない、やわらかい光</li>
+<li><code>0x404040</code>: 暗めのグレー（強すぎると立体感がなくなる）</li>
+<li><code>0.6</code>: 光の強さ（0～1の間で設定）</li>
+</ul>
+<h3>2. 指向性ライト（DirectionalLight）</h3>
+<pre><code class="language-typescript">const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(1, 1, 1);
+scene.add(directionalLight);
+</code></pre>
+<p><strong>指向性ライトとは？</strong></p>
+<ul>
+<li>太陽のように一方向から照らす光</li>
+<li>はっきりとした影を作り、立体感を演出</li>
+<li><code>0xffffff</code>: 白色の光</li>
+<li><code>0.8</code>: やや強めの光の強さ</li>
+<li><code>position.set(1, 1, 1)</code>: 右上手前から照らす</li>
+</ul>
+<p><strong>なぜ2種類の光が必要なのか？</strong></p>
+<ul>
+<li>環境光のみ: 影がなく、のっぺりした見た目</li>
+<li>指向性ライトのみ: 影が濃すぎて暗い部分が見えない</li>
+<li>両方組み合わせることで、自然で美しい照明効果を得られます</li>
+</ul>
+<h2>📁 GLTFLoader詳細解説</h2>
+<h3>1. GLTFLoaderの初期化</h3>
+<pre><code class="language-typescript">const loader = new GLTFLoader();
+</code></pre>
+<p><strong>GLTFとは？</strong></p>
+<ul>
+<li>Graphics Language Transmission Format の略</li>
+<li>Khronos Groupが開発した3Dシーンとモデルの標準形式</li>
+<li><code>.gltf</code>（JSON + 外部ファイル）と <code>.glb</code>（バイナリ形式）の2つの形式があります</li>
+</ul>
+<p><strong>なぜGLTFなのか？</strong></p>
+<ul>
+<li>Web向けに最適化された軽量形式</li>
+<li>アニメーション、マテリアル、テクスチャを一つのファイルに含められる</li>
+<li>Three.jsでの読み込みが高速で安定している</li>
+</ul>
+<h3>2. 非同期読み込みの仕組み</h3>
+<pre><code class="language-typescript">loader.load(
+    &#39;/models/arm_light.glb&#39;,  // ファイルパス
+    (gltf) =&gt; { /* 成功 */ },
+    (progress) =&gt; { /* 進行状況 */ },
+    (error) =&gt; { /* エラー */ }
+);
+</code></pre>
+<p><strong>コールバック関数パターン</strong></p>
+<ul>
+<li><strong>成功コールバック</strong>: ファイル読み込み完了時に実行</li>
+<li><strong>進行状況コールバック</strong>: 読み込み進行度を監視</li>
+<li><strong>エラーコールバック</strong>: 読み込み失敗時の処理</li>
+</ul>
+<p><strong>非同期処理の利点</strong></p>
+<ul>
+<li>ファイル読み込み中もUIがブロックされない</li>
+<li>大きなファイルでも段階的に処理できる</li>
+<li>ユーザーに適切なフィードバックを提供できる</li>
+</ul>
+<h2>📐 自動サイズ調整システム</h2>
+<h3>1. バウンディングボックスの計算</h3>
+<pre><code class="language-typescript">const box = new THREE.Box3().setFromObject(model);
+const size = box.getSize(new THREE.Vector3()).length();
+const center = box.getCenter(new THREE.Vector3());
+</code></pre>
+<p><strong>Box3クラスの役割</strong></p>
+<ul>
+<li><code>Box3</code>: 3D空間での立方体領域を表現するクラス</li>
+<li><code>setFromObject(model)</code>: モデル全体を囲む最小の箱を計算</li>
+<li>オブジェクトのすべての頂点を調べて境界を決定します</li>
+</ul>
+<p><strong>サイズと中心の取得</strong></p>
+<ul>
+<li><code>getSize()</code>: 箱の縦・横・奥行きのサイズを取得</li>
+<li><code>length()</code>: 対角線の長さを計算（モデルの「大きさ」の指標）</li>
+<li><code>getCenter()</code>: 箱の中心点を計算</li>
+</ul>
+<h3>2. モデルの中央配置</h3>
+<pre><code class="language-typescript">model.position.sub(center);
+</code></pre>
+<p><strong>position.sub()の仕組み</strong></p>
+<ul>
+<li><code>sub()</code>: ベクトルの減算を行うメソッド</li>
+<li>モデルの現在位置から中心点を引くことで、原点(0,0,0)中心に配置</li>
+<li>どんな位置にあるモデルでも画面中央に表示されます</li>
+</ul>
+<h3>3. カメラ位置の動的調整</h3>
+<pre><code class="language-typescript">camera.position.set(size / 2, size / 5, size / 2);
+camera.lookAt(0, 0, 0);
+</code></pre>
+<p><strong>サイズに基づく配置</strong></p>
+<ul>
+<li><code>size / 2</code>: モデルサイズの半分の距離に配置</li>
+<li><code>size / 5</code>: やや上から見下ろす角度</li>
+<li>どんなサイズのモデルでも適切な距離で表示されます</li>
+</ul>
+<p><strong>lookAt()の重要性</strong></p>
+<ul>
+<li>カメラが原点(0,0,0)を向くように調整</li>
+<li>モデルが画面中央に来るように視線を設定</li>
+</ul>
+<h2>🎭 アニメーションシステム詳細</h2>
+<h3>1. AnimationMixerの初期化</h3>
+<pre><code class="language-typescript">if (gltf.animations &amp;&amp; gltf.animations.length &gt; 0) {
+    mixer = new THREE.AnimationMixer(model);
+    gltf.animations.forEach((clip) =&gt; {
+        mixer!.clipAction(clip).play();
+    });
+}
+</code></pre>
+<p><strong>AnimationMixerとは？</strong></p>
+<ul>
+<li>複数のアニメーションを同時に管理するシステム</li>
+<li>アニメーションの再生、停止、ブレンドを制御</li>
+<li>Blenderなどで作成したアニメーションを再生できます</li>
+</ul>
+<p><strong>AnimationClipの概念</strong></p>
+<ul>
+<li>一つの動作（歩く、回転する等）を表現するデータ</li>
+<li>キーフレームベースのアニメーション情報</li>
+<li>複数のクリップを組み合わせて複雑な動作を作成可能</li>
+</ul>
+<h3>2. アニメーションの更新</h3>
+<pre><code class="language-typescript">function animate() {
+    requestAnimationFrame(animate);
+    
+    if (mixer) {
+        mixer.update(0.016);  // 60FPS想定
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+}
+</code></pre>
+<p><strong>0.016の意味</strong></p>
+<ul>
+<li>1フレームの時間（1/60秒 ≈ 0.016秒）</li>
+<li>60FPSでアニメーションが滑らかに再生されます</li>
+<li>この値を変更することでアニメーション速度を調整可能</li>
+</ul>
+<p><strong>更新の順序</strong></p>
+<ol>
+<li>アニメーションの更新（mixer.update）</li>
+<li>カメラコントロールの更新（controls.update）</li>
+<li>画面への描画（renderer.render）</li>
+</ol>
+<h2>🎨 高度なレンダリング設定</h2>
+<h3>1. アンチエイリアス</h3>
+<pre><code class="language-typescript">const renderer = new THREE.WebGLRenderer({ antialias: true });
+</code></pre>
+<p><strong>アンチエイリアスとは？</strong></p>
+<ul>
+<li>画像の縁のギザギザ（ジャギー）を滑らかにする技術</li>
+<li>より美しい3D描画を実現</li>
+<li>パフォーマンスと品質のトレードオフがあります</li>
+</ul>
+<h3>2. 色空間の設定</h3>
+<pre><code class="language-typescript">renderer.outputColorSpace = THREE.SRGBColorSpace;
+</code></pre>
+<p><strong>sRGB色空間の利点</strong></p>
+<ul>
+<li>モニターでの色再現がより正確</li>
+<li>現代のWebブラウザとの互換性が良好</li>
+<li>デザイナーが意図した色合いを正確に表示</li>
+</ul>
+<h3>3. 背景色の設定</h3>
+<pre><code class="language-typescript">renderer.setClearColor(0x222222);
+</code></pre>
+<p><strong>暗めの背景を選ぶ理由</strong></p>
+<ul>
+<li>3Dモデルのシルエットが見やすくなる</li>
+<li>目に優しく、長時間の作業に適している</li>
+<li>プロフェッショナルな印象を与える</li>
+</ul>
+<h2>🕹️ OrbitControls詳細</h2>
+<h3>1. Dampingシステム</h3>
+<pre><code class="language-typescript">controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+</code></pre>
+<p><strong>Dampingとは？</strong></p>
+<ul>
+<li>マウス操作を滑らかに減衰させる機能</li>
+<li>リアルな慣性を再現</li>
+<li>急激な動きを抑制し、使いやすさを向上</li>
+</ul>
+<p><strong>dampingFactorの調整</strong></p>
+<ul>
+<li>0.05: 適度な滑らかさ</li>
+<li>値を小さくすると、より滑らかに</li>
+<li>値を大きくすると、よりダイレクトに</li>
+</ul>
+<h3>2. コントロールの更新</h3>
+<pre><code class="language-typescript">controls.update();
+</code></pre>
+<p><strong>毎フレーム更新の必要性</strong></p>
+<ul>
+<li>マウス入力の変化を反映</li>
+<li>Dampingエフェクトの計算</li>
+<li>カメラ位置の自動調整</li>
+</ul>
+<h2>📱 レスポンシブ対応の詳細</h2>
+<h3>1. リサイズイベントの処理</h3>
+<pre><code class="language-typescript">window.addEventListener(&#39;resize&#39;, () =&gt; {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</code></pre>
+<p><strong>アスペクト比の重要性</strong></p>
+<ul>
+<li><code>camera.aspect</code>: カメラの縦横比を更新</li>
+<li>ウィンドウサイズ変更時に歪みを防止</li>
+<li>モバイルデバイスでの表示も適切に</li>
+</ul>
+<p><strong>updateProjectionMatrix()の役割</strong></p>
+<ul>
+<li>カメラ設定の変更をGPUに反映</li>
+<li>この呼び出しを忘れると変更が適用されません</li>
+<li>レンダリングパフォーマンスを最適化</li>
+</ul>
+<h2>🔍 エラーハンドリングとデバッグ</h2>
+<h3>1. 進行状況の監視</h3>
+<pre><code class="language-typescript">(progress) =&gt; {
+    const percentage = (progress.loaded / progress.total) * 100;
+    console.log(`読み込み進行状況: ${percentage.toFixed(2)}%`);
+}
+</code></pre>
+<p><strong>progress オブジェクトの構造</strong></p>
+<ul>
+<li><code>loaded</code>: 既に読み込まれたバイト数</li>
+<li><code>total</code>: ファイルの総バイト数</li>
+<li>ローディングバーの実装に活用可能</li>
+</ul>
+<h3>2. エラーハンドリング</h3>
+<pre><code class="language-typescript">(error) =&gt; {
+    console.error(&#39;GLBファイルの読み込みエラー:&#39;, error);
+    const loadingElement = document.getElementById(&#39;loading&#39;);
+    if (loadingElement) {
+        loadingElement.innerHTML = &#39;エラー: GLBファイルが見つかりません&#39;;
+        loadingElement.style.color = &#39;#ff6b6b&#39;;
+    }
+}
+</code></pre>
+<p><strong>一般的なエラーの原因</strong></p>
+<ul>
+<li>ファイルパスの間違い</li>
+<li>ファイル形式の不適合</li>
+<li>ネットワーク接続の問題</li>
+<li>サーバーのCORS設定</li>
+</ul>
+<h2>🎯 初心者がつまずきやすいポイント</h2>
+<h3>1. ファイルパスの問題</h3>
+<pre><code class="language-typescript">loader.load(&#39;/models/arm_light.glb&#39;, ...);
+</code></pre>
+<p><strong>正しいパス設定</strong></p>
+<ul>
+<li>publicフォルダ基準の絶対パス</li>
+<li>相対パス（<code>./models/arm_light.glb</code>）も使用可能</li>
+<li>サーバー環境での動作確認が重要</li>
+</ul>
+<h3>2. アニメーションが動かない場合</h3>
+<ul>
+<li><code>mixer.update()</code> の呼び忘れ</li>
+<li>アニメーションクリップが存在しない</li>
+<li><code>requestAnimationFrame</code> ループが停止している</li>
+</ul>
+<h3>3. モデルが表示されない場合</h3>
+<ul>
+<li>ファイル読み込みエラー</li>
+<li>カメラ位置が不適切</li>
+<li>ライティングが不十分</li>
+<li><code>scene.add(model)</code> の呼び忘れ</li>
+</ul>
+<h2>🚀 次のステップと応用</h2>
+<h3>1. モデルの改造</h3>
+<ul>
+<li>異なるGLBファイルの読み込み</li>
+<li>マテリアルの動的変更</li>
+<li>テクスチャの追加</li>
+</ul>
+<h3>2. アニメーション制御</h3>
+<ul>
+<li>特定のアニメーションの再生/停止</li>
+<li>アニメーション速度の調整</li>
+<li>複数アニメーションのブレンド</li>
+</ul>
+<h3>3. インタラクション追加</h3>
+<ul>
+<li>マウスクリックでのオブジェクト選択</li>
+<li>オブジェクトの動的移動</li>
+<li>UI要素との連携</li>
+</ul>
+<h3>4. パフォーマンス最適化</h3>
+<ul>
+<li>LOD（Level of Detail）の実装</li>
+<li>インスタンシングによる最適化</li>
+<li>適切なライティング設定</li>
+</ul>
+<h3>5. 高度な機能</h3>
+<ul>
+<li>シャドウマッピング</li>
+<li>ポストプロセシング効果</li>
+<li>物理演算の追加</li>
+</ul>
+<h2>📚 学習リソース</h2>
+<h3>公式ドキュメント</h3>
+<ul>
+<li><a href="https://threejs.org/docs/">Three.js 公式ドキュメント</a></li>
+<li><a href="https://threejs.org/examples/">Three.js 例とサンプル</a></li>
+</ul>
+<h3>3Dモデル作成</h3>
+<ul>
+<li><a href="https://www.blender.org/">Blender</a> - 無料の3Dソフトウェア</li>
+<li><a href="https://sketchfab.com/">Sketchfab</a> - 3Dモデル共有サイト</li>
+</ul>
+<h3>TypeScript</h3>
+<ul>
+<li><a href="https://www.typescriptlang.org/docs/">TypeScript公式ドキュメント</a></li>
+<li><a href="https://www.npmjs.com/package/@types/three">Three.js + TypeScript の型定義</a></li>
+</ul>
+<hr>
+<p><em>このドキュメントが、あなたの3Dモデルビューア開発の助けになれば幸いです！</em></p>
+
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 Three.js Examples - WebGL Learning Project</p>
+    </footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

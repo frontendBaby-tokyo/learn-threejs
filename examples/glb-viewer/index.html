@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLBビューワー - WebGL Examples</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ナビゲーションヘッダー */
+        .nav-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 1000;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-home {
+            text-decoration: none;
+            color: #667eea;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-home:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-title {
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* 3Dキャンバスコンテナ */
+        .canvas-container {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        #container {
+            width: 100%;
+            height: 100%;
+            border-radius: 16px;
+            position: relative;
+        }
+
+        /* ローディング表示 */
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+
+        #loading .loading-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: block;
+            animation: spin 2s linear infinite;
+        }
+
+        #loading .loading-text {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 情報パネル */
+        .info-panel {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 300px;
+            z-index: 100;
+        }
+
+        .info-title {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* コントロール情報 */
+        .controls-info {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 250px;
+            z-index: 100;
+        }
+
+        .controls-title {
+            color: #333;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-item {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 0.4rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-key {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .nav-header {
+                padding: 0.8rem 1rem;
+            }
+            
+            .nav-content {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .canvas-container {
+                top: 100px;
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+            }
+            
+            .info-panel,
+            .controls-info {
+                bottom: 20px;
+                left: 20px;
+                right: 20px;
+                max-width: none;
+            }
+            
+            .controls-info {
+                bottom: 140px;
+            }
+        }
+
+        /* アニメーション */
+        .canvas-container {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .info-panel,
+        .controls-info {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ナビゲーションヘッダー -->
+    <header class="nav-header">
+        <div class="nav-content">
+            <a href="/" class="nav-home">← ホームに戻る</a>
+            <h1 class="nav-title">GLBビューワー</h1>
+        </div>
+    </header>
+
+    <!-- 3Dキャンバス -->
+    <div class="canvas-container">
+        <div id="container">
+            <div id="loading">
+                <span class="loading-icon">⚙️</span>
+                <div class="loading-text">GLBファイルを読み込み中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- コントロール情報 -->
+    <div class="controls-info">
+        <div class="controls-title">
+            🎮 操作方法
+        </div>
+        <div class="control-item">
+            <span>回転</span>
+            <span class="control-key">ドラッグ</span>
+        </div>
+        <div class="control-item">
+            <span>ズーム</span>
+            <span class="control-key">ホイール</span>
+        </div>
+        <div class="control-item">
+            <span>パン</span>
+            <span class="control-key">右クリック</span>
+        </div>
+    </div>
+
+    <!-- 情報パネル -->
+    <div class="info-panel">
+        <div class="info-title">
+            🦾 3Dモデル表示
+        </div>
+        <div class="info-description">
+            GLB形式の3Dモデルを読み込んで表示しています。マウスで自由に視点を変更できます。
+        </div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+</body>
+</html>

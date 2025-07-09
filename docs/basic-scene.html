@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Scene - 基本的な3Dシーン - Three.js Examples</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="nav-container">
+                <a href="../index.html" class="nav-home">🏠 ホーム</a>
+                <h1>Basic Scene - 基本的な3Dシーン</h1>
+                <div class="nav-links">
+                    <a href="./basic-scene.html">Basic Scene</a>
+                    <a href="./glb-viewer.html">GLB Viewer</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <main>
+        <div class="content">
+            <h1>Three.js 基本シーン解説ドキュメント</h1>
+<p>このドキュメントでは、<code>main.js</code>の光源追加以降の処理について、初心者向けに詳しく解説します。</p>
+<h2>main.js</h2>
+<pre><code class="language-javascript">import * as THREE from &#39;three&#39;
+import { OrbitControls } from &#39;three/examples/jsm/controls/OrbitControls.js&#39;
+
+// 🎬 シーン準備
+const scene = new THREE.Scene()
+scene.background = new THREE.Color(0x2c3e50)  // 濃い青
+
+// 📷 カメラ設定
+const camera = new THREE.PerspectiveCamera(
+    75,                                    // 視野角
+    window.innerWidth / window.innerHeight, // アスペクト比
+    0.1,                                   // near
+    1000                                   // far
+)
+camera.position.set(5, 5, 5)  // カメラ位置
+
+// 🎨 レンダラー設定
+const canvas = document.getElementById(&#39;myCanvas&#39;)
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
+renderer.setSize(window.innerWidth, window.innerHeight)
+
+// 🕹️ マウス操作
+const controls = new OrbitControls(camera, renderer.domElement)
+
+// 💡 光源追加
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)  // 環境光
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)  // 太陽光
+directionalLight.position.set(10, 10, 5)
+scene.add(ambientLight, directionalLight)
+
+// 📦 立方体作成
+const geometry = new THREE.BoxGeometry(1, 1, 1)  // 1x1x1の立方体
+const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 })  // 緑色
+const cube = new THREE.Mesh(geometry, material)
+scene.add(cube)
+
+// 🌍 地面作成
+const planeGeometry = new THREE.PlaneGeometry(10, 10)  // 10x10の平面
+const planeMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 })  // 灰色
+const plane = new THREE.Mesh(planeGeometry, planeMaterial)
+plane.rotation.x = -Math.PI / 2  // 90度回転（水平にする）
+plane.position.y = -1            // 少し下に配置
+scene.add(plane)
+
+// 🎞️ アニメーションループ
+function animate() {
+    requestAnimationFrame(animate)
+    
+    // 立方体を回転させる
+    cube.rotation.x += 0.01
+    cube.rotation.y += 0.01
+    
+    controls.update()
+    renderer.render(scene, camera)
+}
+
+// 🚀 開始！
+animate()
+</code></pre>
+<h2>📦 立方体作成の詳細解説</h2>
+<h3>1. ジオメトリの作成</h3>
+<pre><code class="language-javascript">const geometry = new THREE.BoxGeometry(1, 1, 1)  // 1x1x1の立方体
+</code></pre>
+<p><strong>ジオメトリとは？</strong></p>
+<ul>
+<li>ジオメトリは3Dオブジェクトの「形」を定義します</li>
+<li><code>BoxGeometry</code>は立方体の形を作るためのクラスです</li>
+<li>引数の<code>(1, 1, 1)</code>は幅、高さ、奥行きを表します</li>
+<li>Three.jsの世界では1単位 = 約1メートルとして考えるのが一般的です</li>
+</ul>
+<p><strong>なぜこのサイズなのか？</strong></p>
+<ul>
+<li>1x1x1という小さめのサイズにすることで、画面上で見やすくなります</li>
+<li>カメラから適度な距離に配置されているため、このサイズが最適です</li>
+</ul>
+<h3>2. マテリアルの作成</h3>
+<pre><code class="language-javascript">const material = new THREE.MeshLambertMaterial({ color: 0x00ff00 })  // 緑色
+</code></pre>
+<p><strong>マテリアルとは？</strong></p>
+<ul>
+<li>マテリアルは3Dオブジェクトの「見た目」を定義します</li>
+<li>色、質感、光の反射の仕方などを決めます</li>
+</ul>
+<p><strong>MeshLambertMaterialの特徴</strong></p>
+<ul>
+<li>光源からの影響を受けるマテリアルです</li>
+<li>リアルな陰影表現ができます</li>
+<li><code>color: 0x00ff00</code>は16進数カラーコードで緑色を表します<ul>
+<li><code>0x</code>は16進数を表す接頭辞</li>
+<li><code>00ff00</code>は赤=00、緑=ff（最大値）、青=00を意味します</li>
+</ul>
+</li>
+</ul>
+<h3>3. メッシュの作成とシーンへの追加</h3>
+<pre><code class="language-javascript">const cube = new THREE.Mesh(geometry, material)
+scene.add(cube)
+</code></pre>
+<p><strong>メッシュとは？</strong></p>
+<ul>
+<li>メッシュ = ジオメトリ（形） + マテリアル（見た目）</li>
+<li>実際に画面に表示される3Dオブジェクトです</li>
+</ul>
+<p><strong>scene.add()の役割</strong></p>
+<ul>
+<li>作成したオブジェクトをシーンに追加します</li>
+<li>シーンに追加されていないオブジェクトは画面に表示されません</li>
+</ul>
+<h2>🌍 地面作成の詳細解説</h2>
+<h3>1. 平面ジオメトリの作成</h3>
+<pre><code class="language-javascript">const planeGeometry = new THREE.PlaneGeometry(10, 10)  // 10x10の平面
+</code></pre>
+<p><strong>PlaneGeometryとは？</strong></p>
+<ul>
+<li>平面（四角形）の形を作るジオメトリです</li>
+<li>引数の<code>(10, 10)</code>は幅と高さを表します</li>
+<li>立方体より大きくすることで、地面らしい広がりを表現します</li>
+</ul>
+<h3>2. 地面用マテリアルの作成</h3>
+<pre><code class="language-javascript">const planeMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 })  // 灰色
+</code></pre>
+<p><strong>なぜ灰色なのか？</strong></p>
+<ul>
+<li><code>0x808080</code>は中間的な灰色です</li>
+<li>地面らしい落ち着いた色合いを表現しています</li>
+<li>緑の立方体との色のコントラストも良好です</li>
+</ul>
+<h3>3. 地面の配置と回転</h3>
+<pre><code class="language-javascript">const plane = new THREE.Mesh(planeGeometry, planeMaterial)
+plane.rotation.x = -Math.PI / 2  // 90度回転（水平にする）
+plane.position.y = -1            // 少し下に配置
+scene.add(plane)
+</code></pre>
+<p><strong>回転の仕組み</strong></p>
+<ul>
+<li><code>plane.rotation.x = -Math.PI / 2</code></li>
+<li><code>Math.PI</code>は円周率π（約3.14159）</li>
+<li><code>Math.PI / 2</code>は90度を表します（ラジアン単位）</li>
+<li>マイナス符号により、X軸周りに-90度回転します</li>
+</ul>
+<p><strong>なぜ回転が必要なのか？</strong></p>
+<ul>
+<li>PlaneGeometryは初期状態では縦に立っています</li>
+<li>X軸周りに-90度回転させることで水平（地面のような状態）にします</li>
+</ul>
+<p><strong>位置の調整</strong></p>
+<ul>
+<li><code>plane.position.y = -1</code></li>
+<li>Y座標を-1にすることで、立方体の下に配置します</li>
+<li>立方体は原点(0,0,0)にあるので、地面を下に配置することで立体感が生まれます</li>
+</ul>
+<h2>🎞️ アニメーションループの詳細解説</h2>
+<h3>1. アニメーション関数の定義</h3>
+<pre><code class="language-javascript">function animate() {
+    requestAnimationFrame(animate)
+    
+    // 立方体を回転させる
+    cube.rotation.x += 0.01
+    cube.rotation.y += 0.01
+    
+    controls.update()
+    renderer.render(scene, camera)
+}
+</code></pre>
+<h3>2. requestAnimationFrameの仕組み</h3>
+<pre><code class="language-javascript">requestAnimationFrame(animate)
+</code></pre>
+<p><strong>requestAnimationFrameとは？</strong></p>
+<ul>
+<li>ブラウザが画面を更新するタイミングに合わせて関数を実行します</li>
+<li>通常は1秒間に60回実行されます（60fps）</li>
+<li>自分自身を再帰的に呼び出すことで無限ループを作ります</li>
+</ul>
+<p><strong>なぜsetIntervalではダメなのか？</strong></p>
+<ul>
+<li><code>setInterval</code>は固定間隔で実行されるため、ブラウザの描画タイミングとずれる可能性があります</li>
+<li><code>requestAnimationFrame</code>はブラウザの最適化機能を活用できます</li>
+<li>タブが非アクティブな時は自動的に停止し、パフォーマンスが向上します</li>
+</ul>
+<h3>3. オブジェクトの回転</h3>
+<pre><code class="language-javascript">cube.rotation.x += 0.01
+cube.rotation.y += 0.01
+</code></pre>
+<p><strong>回転の仕組み</strong></p>
+<ul>
+<li><code>rotation.x</code>はX軸周りの回転角度（ラジアン単位）</li>
+<li><code>rotation.y</code>はY軸周りの回転角度（ラジアン単位）</li>
+<li><code>+= 0.01</code>により、毎フレーム0.01ラジアン回転します</li>
+</ul>
+<p><strong>回転速度の計算</strong></p>
+<ul>
+<li>0.01ラジアン ≈ 0.57度</li>
+<li>60fps × 0.57度 ≈ 34.2度/秒</li>
+<li>1回転（360度）するのに約10.5秒かかります</li>
+</ul>
+<h3>4. コントロールの更新</h3>
+<pre><code class="language-javascript">controls.update()
+</code></pre>
+<p><strong>なぜupdateが必要なのか？</strong></p>
+<ul>
+<li>OrbitControlsは内部状態を持っています</li>
+<li>マウス操作による変更を反映するために<code>update()</code>を呼ぶ必要があります</li>
+<li>毎フレーム呼ぶことで、滑らかなマウス操作が可能になります</li>
+</ul>
+<h3>5. 画面への描画</h3>
+<pre><code class="language-javascript">renderer.render(scene, camera)
+</code></pre>
+<p><strong>renderメソッドの役割</strong></p>
+<ul>
+<li>シーン内のすべてのオブジェクトを計算します</li>
+<li>カメラの視点から見た映像を生成します</li>
+<li>生成された映像をCanvasに描画します</li>
+</ul>
+<p><strong>毎フレーム呼ぶ理由</strong></p>
+<ul>
+<li>オブジェクトの位置や回転が変わるたびに再描画が必要です</li>
+<li>静止画ではなく動画として表示するためです</li>
+</ul>
+<h3>6. アニメーション開始</h3>
+<pre><code class="language-javascript">animate()
+</code></pre>
+<p><strong>最初の呼び出し</strong></p>
+<ul>
+<li>この1行でアニメーションが開始されます</li>
+<li>以降は<code>requestAnimationFrame</code>による自動的な再帰呼び出しが続きます</li>
+</ul>
+<h2>📐 座標系とポジショニングの理解</h2>
+<h3>Three.jsの座標系</h3>
+<ul>
+<li><strong>X軸</strong>: 左右方向（右がプラス）</li>
+<li><strong>Y軸</strong>: 上下方向（上がプラス）</li>
+<li><strong>Z軸</strong>: 奥行き方向（手前がプラス）</li>
+</ul>
+<h3>オブジェクトの初期位置</h3>
+<ul>
+<li><strong>立方体</strong>: 原点(0, 0, 0)に配置</li>
+<li><strong>地面</strong>: (0, -1, 0)に配置（立方体の下）</li>
+<li><strong>カメラ</strong>: (5, 5, 5)に配置（斜め上から見下ろす）</li>
+</ul>
+<h3>回転の単位（ラジアン）</h3>
+<ul>
+<li>0 ラジアン = 0度</li>
+<li>π/2 ラジアン = 90度</li>
+<li>π ラジアン = 180度</li>
+<li>2π ラジアン = 360度</li>
+</ul>
+<h2>🎯 初心者がつまずきやすいポイント</h2>
+<h3>1. なぜオブジェクトが見えないのか？</h3>
+<ul>
+<li>シーンに追加し忘れ（<code>scene.add()</code>）</li>
+<li>カメラの視野外に配置</li>
+<li>マテリアルが透明または黒色</li>
+<li>光源が不適切</li>
+</ul>
+<h3>2. 回転や移動が反映されないとき</h3>
+<ul>
+<li><code>renderer.render()</code>を呼び忘れ</li>
+<li>アニメーションループが動いていない</li>
+<li>値の変更がアニメーション関数外で行われている</li>
+</ul>
+<h3>3. パフォーマンスの問題</h3>
+<ul>
+<li>複雑すぎるジオメトリ</li>
+<li>過度なアニメーション処理</li>
+<li>不要なオブジェクトがシーンに残っている</li>
+</ul>
+<h2>🚀 次のステップ</h2>
+<p>このコードを理解したら、以下の改造に挑戦してみましょう：</p>
+<ol>
+<li>立方体の色を変更する</li>
+<li>複数の立方体を配置する</li>
+<li>異なる形状（球体、円柱など）を追加する</li>
+<li>回転速度を変更する</li>
+<li>立方体を上下に移動させる</li>
+<li>異なる種類のマテリアルを試す</li>
+</ol>
+<p>Three.jsの世界は奥が深いですが、この基本を理解すれば様々な3D表現が可能になります！</p>
+
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 Three.js Examples - WebGL Learning Project</p>
+    </footer>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Examples</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        p {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .example-card {
+            background: #fff;
+            border-radius: 15px;
+            padding: 30px 20px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .example-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            border-color: #667eea;
+        }
+        
+        .example-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .example-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .example-description {
+            color: #666;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+        
+        .basic-scene { color: #4CAF50; }
+        .glb-viewer { color: #2196F3; }
+        
+        .docs-section {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        .docs-title {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .docs-description {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+        
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .doc-link {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .doc-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .doc-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .doc-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .doc-description {
+            font-size: 0.9em;
+            opacity: 0.9;
+            line-height: 1.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 WebGL Examples</h1>
+        <p>Three.jsを使った3D表示のテスト例です。各カードをクリックして実行してください。</p>
+        
+        <div class="examples-grid">
+            <a href="/examples/basic-scene/" class="example-card">
+                <span class="example-icon basic-scene">📦</span>
+                <div class="example-title">基本3Dシーン</div>
+                <div class="example-description">
+                    回転する立方体と地面を表示。<br>
+                    Three.jsの基本的な使い方を学習。
+                </div>
+            </a>
+            
+            <a href="/examples/glb-viewer/" class="example-card">
+                <span class="example-icon glb-viewer">🦾</span>
+                <div class="example-title">GLBビューワー</div>
+                <div class="example-description">
+                    GLB形式の3Dモデルを読み込み表示。<br>
+                    アニメーション対応。
+                </div>
+            </a>
+        </div>
+        
+        <!-- 解説ページセクション -->
+        <div class="docs-section">
+            <h2 class="docs-title">📚 コード解説</h2>
+            <p class="docs-description">
+                各サンプルの詳細な解説を読むことができます。<br>
+                Three.jsの仕組みを理解したい方はこちらをご覧ください。
+            </p>
+            
+            <div class="docs-grid">
+                <a href="/docs/basic-scene.html" class="doc-link">
+                    <span class="doc-icon">📖</span>
+                    <div class="doc-title">Basic Scene 解説</div>
+                    <div class="doc-description">
+                        立方体と地面の作成方法、<br>
+                        光源とカメラの設定を詳しく解説
+                    </div>
+                </a>
+                
+                <a href="/docs/glb-viewer.html" class="doc-link">
+                    <span class="doc-icon">📘</span>
+                    <div class="doc-title">GLB Viewer 解説</div>
+                    <div class="doc-description">
+                        3Dモデルの読み込み、<br>
+                        アニメーション制御の仕組みを解説
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
